@@ -3,7 +3,7 @@ import datetime
 import os
 from dotenv import load_dotenv
 
-from sqlalchemy import DateTime, Integer, String, func, Boolean
+from sqlalchemy import DateTime, Integer, String, func, Boolean, ForeignKey
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm import (DeclarativeBase, MappedColumn, mapped_column,
                             sessionmaker)
@@ -40,7 +40,7 @@ class Ads(Base):
     title: MappedColumn[str] = mapped_column(String(100), nullable=False)
     description: MappedColumn[str] = mapped_column(String(1000), nullable=True)
     created_at: MappedColumn[datetime.datetime] = mapped_column(DateTime, server_default=func.now())
-    owner: MappedColumn[str] = mapped_column(String(100), nullable=False)
+    owner_id: MappedColumn[int] = mapped_column(ForeignKey("users.id"), nullable=False)
 
     @property
     def id_dict(self):
@@ -53,7 +53,7 @@ class Ads(Base):
             "title": self.title,
             "description": self.description,
             "created_at": int(self.created_at.timestamp()),
-            "owner": self.owner,
+            "owner": self.owner_id,
         }
 
 class User(Base):
@@ -61,8 +61,8 @@ class User(Base):
 
     id: MappedColumn[int] = mapped_column(Integer, primary_key=True)
     username: MappedColumn[str] = mapped_column(String(100), nullable=False)
-    email: MappedColumn[str] = mapped_column(String(100), nullable=False)
-    password_hash: MappedColumn[str] = mapped_column(String(100), nullable=False)
+    email: MappedColumn[str] = mapped_column(String(100), unique=True, nullable=False)
+    password_hash: MappedColumn[str] = mapped_column(String(255), nullable=False)
 
     def hash_password(self, password: str):
         self.password_hash = generate_password_hash(password)
@@ -71,5 +71,5 @@ class User(Base):
         return check_password_hash(self.password_hash, password)
 
 
-Base.metadata.drop_all(bind=engine)
+# Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
