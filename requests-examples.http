@@ -1,98 +1,111 @@
-# примеры API-запросов
-
+# API запросы для тестирования
 @baseUrl = http://localhost:5000
 
-# получение объявлений - не зарегистрированный пользователь
-GET {{baseUrl}}/ads
+###
+# Регистрация пользователя 1
+POST {{baseUrl}}/register
 Content-Type: application/json
 
-### получение объявлений - зарегистрированный пользователь
-GET {{baseUrl}}/ads
-Content-Type: application/json
-Authorization: Token 21d7c9d2cf025f85d9d84769b6d5ad23ec47e6b0
-
-### получение объявлений - зарегистрированный пользователь
-GET {{baseUrl}}/advertisements/
-Content-Type: application/json
-Authorization: Token d614de306f5b36adf12d0034f3ffd9e09be47b34
-
-### Удаление объявления
-DELETE  {{baseUrl}}/advertisements/14/
-Content-Type: application/json
-Authorization: Token 974fb189d4a66ed84d54708cb6b6ff6800acc6c6
-
+{
+    "username": "Ivan",
+    "email": "ivan@mail.com",
+    "password": "1234567"
+}
 
 ###
+# Регистрация пользователя 2
+POST {{baseUrl}}/register
+Content-Type: application/json
 
-# создание объявления Админ
+{
+    "username": "alex",
+    "email": "alex@mail.com",
+    "password": "123456"
+}
+
+###
+# Логин пользователя 1
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "username": "Ivan",
+  "password": "1234567"
+}
+
+###
+# Логин пользователя 2
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "username": "alex",
+  "password": "123456"
+}
+
+###
+# Получение всех объявлений. Видят все пользователи
+GET {{baseUrl}}/ads
+Content-Type: application/json
+
+###
+# Создание объявления пользователем, под которым залогинены
 POST {{baseUrl}}/ads
 Content-Type: application/json
 
 {
-  "title": "СТолик",
-  "owner": "Bober"
+  "title": "Кран"
 }
 
 ###
-
-
-# создание объявления Админ
+# Создание объявления пользователем, под которым залогинены
 POST {{baseUrl}}/ads
 Content-Type: application/json
 
 {
-  "title": "Машинка",
-  "owner": "Андрейка"
+  "title": "Машинка"
 }
 
 ###
-# создание объявления Гость1
-POST {{baseUrl}}/advertisements/
+# Создание объявления пользователем, под которым залогинены
+POST {{baseUrl}}/ads
 Content-Type: application/json
-Authorization: Token 974fb189d4a66ed84d54708cb6b6ff6800acc6c6
 
 {
-  "title": "Столик67",
-  "description": "Срочно"
+  "title": "Столик"
 }
-###
 
-# попытка поменять объявление админ
-PATCH {{baseUrl}}/advertisements/1/
+###
+# Изменение объявления пользователем, под которым залогинены
+PATCH {{baseUrl}}/ads/4
 Content-Type: application/json
-Authorization: Token d614de306f5b36adf12d0034f3ffd9e09be47b34
 
 {
-  "status": "OPEN"
+  "title": "Гантели 4 шт",
+  "description": "Новые гантели"
 }
-###
 
-# попытка поменять объявление
-PATCH {{baseUrl}}/advertisements/3/
+###
+# Удаление объявления
+DELETE  {{baseUrl}}/ads/3
 Content-Type: application/json
-Authorization: Token 974fb189d4a66ed84d54708cb6b6ff6800acc6c6
+
+###
+# Logout
+POST  {{baseUrl}}/logout
+Content-Type: application/json
 
 {
-  "status": "CLOSED"
+  "username": "Ivan",
+  "password": "1234567"
 }
-###
-
-# фильтрация по создателю
-GET {{baseUrl}}/advertisements/?xyz_abc=123
-Content-Type: application/json
 
 ###
-
-# фильтрация по создателю
-GET {{baseUrl}}/advertisements/?creator=1
+# Logout
+POST  {{baseUrl}}/logout
 Content-Type: application/json
-###
 
-# фильтрация по статусу
-GET {{baseUrl}}/advertisements/?status=CLOSED
-Content-Type: application/json
-###
-
-# фильтрация по дате
-GET {{baseUrl}}/advertisements/?created_at_before=2020-10-01
-Content-Type: application/json
+{
+  "username": "alex",
+  "password": "123456"
+}
