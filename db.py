@@ -60,7 +60,7 @@ class User(Base):
     __tablename__ = "users"
 
     id: MappedColumn[int] = mapped_column(Integer, primary_key=True)
-    username: MappedColumn[str] = mapped_column(String(100), nullable=False)
+    username: MappedColumn[str] = mapped_column(String(100),unique=True, nullable=False)
     email: MappedColumn[str] = mapped_column(String(100), unique=True, nullable=False)
     password_hash: MappedColumn[str] = mapped_column(String(255), nullable=False)
 

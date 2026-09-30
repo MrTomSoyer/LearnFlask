@@ -27,12 +27,8 @@ class AdsList(MethodView):
         )
 
     def post(self):
-        user_id = session.get("user_id")
-        if user_id is None:
-            return jsonify({"error": "You must be logged in"}), 401
+        user_id = check_login()
         json_data = validate(request.get_json(), CreateAds)
-        if not json_data or "title" not in json_data:
-            return jsonify({"error": "Missing title"}), 400
         ad = Ads(title=json_data["title"],owner_id=user_id)
         add_ads(ad)
         return jsonify(ad.id_dict), 201
@@ -45,11 +41,7 @@ class AdsDetail(MethodView):
 
     def patch(self, ads_id):
         json_data = validate(request.get_json(), UpdateAds)
-        if not json_data:
-            return jsonify({"error": "Empty request"}), 400
-        user_id = session.get("user_id")
-        if user_id is None:
-            return jsonify({"error": "You must be logged in"}), 401
+        user_id = check_login()
         ads = get_ads(ads_id)
         if ads.owner_id != user_id:
             return jsonify({"error": "You cannot edit this ad"}), 403
@@ -59,9 +51,7 @@ class AdsDetail(MethodView):
         return jsonify(ads.dict)
 
     def delete(self, ads_id):
-        user_id = session.get("user_id")
-        if user_id is None:
-            return jsonify({"error": "You must be logged in"}), 401
+        user_id = check_login()
         ads = get_ads(ads_id)
         if ads.owner_id != user_id:
             return jsonify({"error": "You cannot delete this ad"}), 403
@@ -73,13 +63,9 @@ class AdsDetail(MethodView):
 class RegisterView(MethodView):
     def post(self):
         data = validate(request.get_json(), RegisterUser)
-        if not data:
-            return jsonify({"error": "Empty request"}), 400
         username = data.get("username")
         email = data.get("email")
         password = data.get("password")
-        if not username or not email or not password:
-            return jsonify({"error": "username, email and password are required"}), 400
         user = User(username=username,email=email)
         user.hash_password(password)
         add_user(user)
@@ -88,6 +74,7 @@ class RegisterView(MethodView):
             "username": user.username,
             "email": user.email
         }), 201
+
 
 class LoginView(MethodView):
     def post(self):
@@ -101,17 +88,17 @@ class LoginView(MethodView):
         )
         if user is None:
             return jsonify({
-                "error": "Invalid username or password"
+                "error": "Invalid username"
             }), 401
         if not user.check_password(password):
             return jsonify({
-                "error": "Invalid username or password"
+                "error": "Invalid password"
             }), 401
 
         session["user_id"] = user.id
 
         return jsonify({
-            "message": "Login successful",
+            "message": f"Login {username} successful",
             "user_id": user.id
         })
 
@@ -162,18 +149,35 @@ def add_user(user: User):
     except IntegrityError:
         raise HttpError("user already exists", 400)
 
-def get_ads(ads_id: int) -> User:
+def get_ads(ads_id: int) -> Ads:
     ads = request.session.get(Ads, ads_id)
     if ads is None:
         raise HttpError("ads not found", 404)
     return ads
 
 def add_ads(ads: Ads):
+    check_duplicate_ads(ads.title, ads.owner_id)
     request.session.add(ads)
     try:
         request.session.commit()
     except IntegrityError:
-        raise HttpError("user already exists", 400)
+        raise HttpError("already exists", 400)
+
+def check_duplicate_ads(title:str, user_id: int):
+    stmt = select(Ads).where(
+        Ads.title == title,
+        Ads.owner_id == user_id
+    )
+    ads_is_exists = request.session.scalar(stmt)
+    if ads_is_exists is not None:
+        raise HttpError("ads already exists", 400)
+
+def check_login():
+    user_id = session.get("user_id")
+    if user_id is None:
+        return jsonify({"error": "You must be logged in"}), 401
+    return user_id
+
 
 app.add_url_rule('/', view_func=IndexView.as_view('to_ads'), methods=['GET'])
 app.add_url_rule('/ads', view_func=AdsList.as_view('ads_list'), methods=['GET', 'POST'])
